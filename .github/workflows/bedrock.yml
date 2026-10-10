@@ -52,11 +52,26 @@ jobs:
       - name: Run server
         working-directory: server
         run: |
+          rm -f console server.log
           mkfifo console
-          tail -f console | LD_LIBRARY_PATH=. ./bedrock_server &
+          touch server.log
+          # сервер запускается отдельно от шага, чтобы пережить отмену
+          ( setsid nohup bash -c 'tail -f console | LD_LIBRARY_PATH=. ./bedrock_server > server.log 2>&1' > /dev/null 2>&1 & )
+          tail -f server.log &
           sleep 20700
-          echo "stop" > console
-          sleep 30
+
+      - name: Stop server gracefully
+        if: always()
+        working-directory: server
+        run: |
+          if pgrep -x bedrock_server > /dev/null; then
+            timeout 5 bash -c 'echo "stop" > console' || true
+            for i in $(seq 1 60); do
+              pgrep -x bedrock_server > /dev/null || break
+              sleep 2
+            done
+          fi
+          tail -n 15 server.log || true
 
       - name: Save world and configs
         if: always()
@@ -68,3 +83,17 @@ jobs:
             server/allowlist.json
             server/permissions.json
           key: bds-world-${{ github.run_id }}
+
+      - name: Backup world (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bedrock-world-${{ github.run_id }}
+          path: server/worlds
+          retention-days: 14
+
+      - name: Restart (auto)
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run bedrock.yml
