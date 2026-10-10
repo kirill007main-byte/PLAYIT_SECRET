@@ -1,0 +1,70 @@
+name: Minecraft Bedrock Server
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: bedrock
+  cancel-in-progress: false
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Bedrock Dedicated Server
+        run: |
+          mkdir -p server && cd server
+          URL=$(curl -s https://net-secondary.web.minecraft-services.net/api/v1.0/download/links \
+            | jq -r '.result.links[] | select(.downloadType=="serverBedrockLinux") | .downloadUrl')
+          echo "Downloading $URL"
+          curl -L -A "Mozilla/5.0" -o bds.zip "$URL"
+          unzip -q -o bds.zip
+          chmod +x bedrock_server
+
+      - name: Restore world and configs
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            server/worlds
+            server/server.properties
+            server/allowlist.json
+            server/permissions.json
+          key: bds-world-${{ github.run_id }}
+          restore-keys: bds-world-
+
+      - name: Apply repo configs
+        run: |
+          [ -d config ] && cp -r config/. server/ || true
+
+      - name: Start tunnel
+        run: |
+          docker run -d --rm --net=host \
+            -e SECRET_KEY="${{ secrets.PLAYIT_SECRET }}" \
+            ghcr.io/playit-cloud/playit-agent:1.0
+
+      - name: Run server
+        working-directory: server
+        run: |
+          mkfifo console
+          tail -f console | LD_LIBRARY_PATH=. ./bedrock_server &
+          sleep 20700
+          echo "stop" > console
+          sleep 30
+
+      - name: Save world and configs
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            server/worlds
+            server/server.properties
+            server/allowlist.json
+            server/permissions.json
+          key: bds-world-${{ github.run_id }}
