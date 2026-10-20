@@ -1,0 +1,122 @@
+name: Minecraft Endstone Server
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: endstone
+  cancel-in-progress: false
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Endstone and Endweave
+        run: |
+          pip install endstone endstone-endweave
+          pip list 2>/dev/null | grep -i endstone
+
+      - name: Restore world (Endstone cache)
+        id: restore_es
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            bedrock_server/worlds
+            bedrock_server/server.properties
+            bedrock_server/allowlist.json
+            bedrock_server/permissions.json
+          key: es-world-${{ github.run_id }}
+          restore-keys: es-world-
+
+      - name: Restore world (old BDS cache, one-time migration)
+        id: restore_old
+        if: steps.restore_es.outputs.cache-matched-key == ''
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            server/worlds
+            server/server.properties
+            server/allowlist.json
+            server/permissions.json
+          key: bds-world-${{ github.run_id }}
+          restore-keys: bds-world-
+
+      - name: Migrate old world
+        if: steps.restore_es.outputs.cache-matched-key == ''
+        run: |
+          mkdir -p bedrock_server
+          if [ -d server/worlds ]; then
+            echo "Migrating world from old BDS cache"
+            cp -r server/worlds bedrock_server/
+          else
+            echo "No old world found, a new one will be generated"
+          fi
+
+      - name: Apply repo configs
+        run: |
+          mkdir -p bedrock_server
+          [ -d config ] && cp -r config/. bedrock_server/ || true
+
+      - name: Start tunnel
+        run: |
+          docker run -d --rm --net=host \
+            -e SECRET_KEY="${{ secrets.PLAYIT_SECRET }}" \
+            ghcr.io/playit-cloud/playit-agent:1.0
+
+      - name: Run server
+        run: |
+          rm -f console server.log
+          mkfifo console
+          touch server.log
+          ( setsid nohup bash -c 'tail -f console | endstone -y --no-interactive > server.log 2>&1' > /dev/null 2>&1 & )
+          tail -f server.log &
+          sleep 20700
+
+      - name: Stop server gracefully
+        if: always()
+        run: |
+          if pgrep -f bedrock_server > /dev/null; then
+            timeout 5 bash -c 'echo "stop" > console' || true
+            for i in $(seq 1 60); do
+              pgrep -f bedrock_server > /dev/null || break
+              sleep 2
+            done
+          fi
+          tail -n 20 server.log || true
+
+      - name: Save world and configs
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            bedrock_server/worlds
+            bedrock_server/server.properties
+            bedrock_server/allowlist.json
+            bedrock_server/permissions.json
+          key: es-world-${{ github.run_id }}
+
+      - name: Backup world (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: endstone-world-${{ github.run_id }}
+          path: bedrock_server/worlds
+          retention-days: 14
+
+      - name: Restart (auto)
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run endstone.yml
