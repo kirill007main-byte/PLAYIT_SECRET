@@ -24,7 +24,7 @@ jobs:
 
       - name: Install Endstone and Endweave
         run: |
-          pip install "endstone==0.11.14" "endstone-endweave==0.6.3"
+          pip install "endstone==0.11.15" "endstone-endweave==0.6.3""
           pip list 2>/dev/null | grep -i endstone
 
       - name: Restore world (Endstone cache)
