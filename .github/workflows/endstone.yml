@@ -2,9 +2,14 @@ name: Minecraft Endstone Server
 
 on:
   workflow_dispatch:
+    inputs:
+      restore_run_id:
+        description: "ID запуска, из артефакта которого восстановить мир (пусто = из кэша)"
+        required: false
+        default: ""
 
 permissions:
-  actions: write
+  actions: read
   contents: read
 
 concurrency:
@@ -15,6 +20,9 @@ jobs:
   server:
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    permissions:
+      actions: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -22,13 +30,23 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Endstone and Endweave
+      - name: Install Endstone and Endweave (Minecraft 26.60)
         run: |
           pip install "endstone==0.11.15" "endstone-endweave==0.6.3"
           pip list 2>/dev/null | grep -i endstone
 
+      - name: Restore world from artifact (optional)
+        if: inputs.restore_run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: endstone-world-${{ inputs.restore_run_id }}
+          path: bedrock_server/worlds
+          run-id: ${{ inputs.restore_run_id }}
+          github-token: ${{ github.token }}
+
       - name: Restore world (Endstone cache)
         id: restore_es
+        if: inputs.restore_run_id == ''
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -38,31 +56,6 @@ jobs:
             bedrock_server/permissions.json
           key: es-world-${{ github.run_id }}
           restore-keys: es-world-
-
-      - name: Restore world (old BDS cache, one-time migration)
-        id: restore_old
-        if: steps.restore_es.outputs.cache-matched-key == ''
-        continue-on-error: true
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            server/worlds
-            server/server.properties
-            server/allowlist.json
-            server/permissions.json
-          key: bds-world-${{ github.run_id }}
-          restore-keys: bds-world-
-
-      - name: Migrate old world
-        if: steps.restore_es.outputs.cache-matched-key == ''
-        run: |
-          mkdir -p bedrock_server
-          if [ -d server/worlds ]; then
-            echo "Migrating world from old BDS cache"
-            cp -r server/worlds bedrock_server/
-          else
-            echo "No old world found, a new one will be generated"
-          fi
 
       - name: Apply repo configs
         run: |
