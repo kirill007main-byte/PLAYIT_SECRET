@@ -1,0 +1,17 @@
+name: playit agent (temporary, for tunnel setup)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Run playit agent v1.2.0+
+        run: |
+          curl -fL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v1.2.0/playit-linux-amd64 \
+            || curl -fL -o playit https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64
+          chmod +x playit
+          ./playit --version || true
+          SECRET_KEY="${{ secrets.PLAYIT_SECRET }}" timeout 1800 ./playit || true
