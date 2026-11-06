@@ -8,10 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - name: Run playit agent v1.2.0+
+      - name: Run playit agent v1.2.0
         run: |
-          curl -fL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v1.2.0/playit-linux-amd64 \
-            || curl -fL -o playit https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64
+          curl -fL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v1.2.0/playit-linux-amd64
           chmod +x playit
-          ./playit --version || true
-          SECRET_KEY="${{ secrets.PLAYIT_SECRET }}" timeout 1800 ./playit || true
+          nohup ./playit --secret "${{ secrets.PLAYIT_SECRET }}" --socket-path /tmp/playit.sock --log-path "$PWD/playit.log" > playit.out 2>&1 &
+          sleep 20
+          echo "=== playit.log"; head -n 30 playit.log || true
+          echo "=== playit.out"; head -n 10 playit.out || true
+          sleep 1700
