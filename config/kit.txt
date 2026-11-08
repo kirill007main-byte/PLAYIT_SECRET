@@ -1,0 +1,21 @@
+# формат: слот предмет [кол-во] [зачарование:уровень ...] [data=N]
+# слоты: helmet chestplate leggings boots offhand give
+helmet minecraft:netherite_helmet 1 protection:4 unbreaking:3 mending:1 respiration:3 aqua_affinity:1
+chestplate minecraft:netherite_chestplate 1 protection:4 unbreaking:3 mending:1
+leggings minecraft:netherite_leggings 1 protection:4 unbreaking:3 mending:1 swift_sneak:3
+boots minecraft:netherite_boots 1 protection:4 unbreaking:3 mending:1 feather_falling:4 depth_strider:3 soul_speed:3
+give minecraft:netherite_sword 1 sharpness:5 unbreaking:3 mending:1 looting:3 fire_aspect:2
+give minecraft:elytra 1 unbreaking:3 mending:1
+give minecraft:totem_of_undying 15
+give minecraft:firework_rocket 64
+give minecraft:firework_rocket 64
+# зелья: число в data= это номер зелья в Bedrock, по памяти (проверьте в игре, если что-то не то, поменяйте число)
+# 33 Сила II, 16 Скорость II, 13 Огнестойкость (длинная), 22 Исцеление II, 30 Регенерация II, 6 Ночное зрение (длинное), 20 Подводное дыхание (длинное), 40 Медленное падение
+give minecraft:potion 1 data=33
+give minecraft:potion 1 data=16
+give minecraft:potion 1 data=13
+give minecraft:potion 3 data=22
+give minecraft:potion 1 data=30
+give minecraft:potion 1 data=6
+give minecraft:potion 1 data=20
+give minecraft:potion 1 data=40
