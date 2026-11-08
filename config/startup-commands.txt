@@ -1,0 +1,2 @@
+effect {player} resistance 9999999 19 true
+effect {player} strength 9999999 19 true
