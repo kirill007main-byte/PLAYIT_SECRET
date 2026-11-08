@@ -35,10 +35,10 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Install Endstone (Minecraft 26.60) and PyYAML
+      - name: Install Endstone (Minecraft 26.60), PyYAML and OpJoin plugin
         run: |
-          pip install "endstone==0.11.15" pyyaml
-          pip list 2>/dev/null | grep -i -E "endstone|pyyaml"
+          pip install "endstone==0.11.15" pyyaml ./opjoin
+          pip list 2>/dev/null | grep -i -E "endstone|pyyaml|opjoin"
 
       - name: Restore world from artifact (optional)
         if: inputs.restore_run_id != ''
