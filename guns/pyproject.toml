@@ -1,1 +1,16 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
 
+[project]
+name = "endstone-guns"
+version = "0.1.0"
+description = "Hitscan guns (pistol, SMG, machine gun, shotgun, sniper) for Endstone"
+requires-python = ">=3.10"
+dependencies = ["endstone>=0.11"]
+
+[project.entry-points."endstone"]
+guns = "guns:GunsPlugin"
+
+[tool.setuptools.packages.find]
+where = ["src"]
