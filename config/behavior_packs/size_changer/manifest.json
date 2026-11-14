@@ -1,0 +1,17 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Size Changer",
+    "description": "Grow and shrink the player with /event",
+    "uuid": "58bd4e72-59eb-41e7-b72b-277736fbbd7e",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "e83d3c95-99b8-4c9a-8837-a4cdc8f47534",
+      "version": [1, 0, 0]
+    }
+  ]
+}
