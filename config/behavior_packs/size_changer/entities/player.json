@@ -1,0 +1,38 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "minecraft:player",
+      "is_spawnable": false,
+      "is_summonable": false,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "size:tiny":  { "minecraft:scale": { "value": 0.3 } },
+      "size:small": { "minecraft:scale": { "value": 0.6 } },
+      "size:big":   { "minecraft:scale": { "value": 2.0 } },
+      "size:giant": { "minecraft:scale": { "value": 5.0 } }
+    },
+    "events": {
+      "size:tiny": {
+        "remove": { "component_groups": ["size:tiny", "size:small", "size:big", "size:giant"] },
+        "add": { "component_groups": ["size:tiny"] }
+      },
+      "size:small": {
+        "remove": { "component_groups": ["size:tiny", "size:small", "size:big", "size:giant"] },
+        "add": { "component_groups": ["size:small"] }
+      },
+      "size:big": {
+        "remove": { "component_groups": ["size:tiny", "size:small", "size:big", "size:giant"] },
+        "add": { "component_groups": ["size:big"] }
+      },
+      "size:giant": {
+        "remove": { "component_groups": ["size:tiny", "size:small", "size:big", "size:giant"] },
+        "add": { "component_groups": ["size:giant"] }
+      },
+      "size:normal": {
+        "remove": { "component_groups": ["size:tiny", "size:small", "size:big", "size:giant"] }
+      }
+    }
+  }
+}
